@@ -12,20 +12,13 @@
           crossorigin="anonymous">
   </head>
   <body>
-    <br><br>
     <div class="container">
       <div id="app">
-        Message : {{ message }}<br>
-        <ul id="todo-list">
-          <li v-for="item in todos">
-            {{ item }}
-          </li>
+        <label for="numStops">How many stops:</label><br>
+        <input type="number" id="numStops" v-model="numStops" value="10"><br>
+        <ul>
+          <li v-for="stop in filteredStops">{{ stop.name }} :: {{ stop.distance }}</li>
         </ul>
-      </div>
-      <div id="app-2">
-        <span v-bind:title="message">
-          Hover your mouse over me for a few seconds to see my dynamically bound title!
-        </span>
       </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
@@ -42,20 +35,36 @@
 const app = new Vue({
   el: '#app',
   data: {
-    message: 'Hello Vue!',
-    todos: ["EECS448 Lab 6",
-            "EECS448 Project3",
-            "EECS388 Final Project Proposal",
-            "PHIL150 Assignment"]
+    stops: [],
+    numStops: 10
+  },
+  computed: {
+    filteredStops: function() {
+      return this.stops
+        .sort( (a, b) => a.distance - b.distance )
+        .slice( 0, this.numStops );
+    }
   }
 });
 
-const app2 = new Vue({
-  el: '#app-2',
-  data: {
-    message: 'You loaded this page on ' + new Date().toLocaleString()
-  }
-});
+fetch( 'https://utils.pauliankline.com/stops.json' )
+  .then( (response) => {
+    return response.json();
+  }).then( (myJson) => {
+    app.stops = myJson;
+  });
+
+if ( "geolocation" in navigator ) {
+  navigator.geolocation.watchPosition( (position) => {
+    var lat = position.coords.latitude;
+    var lon = position.coords.longitude;
+    for( let i = 0; i < app.stops.length; i++ ) {
+      let dLat = app.stops[i].lat - lat;
+      let dLon = app.stops[i].lon - lon;
+      app.stops[i].distance = Math.sqrt( dLat * dLat + dLon * dLon );
+    }
+  });
+}
     </script>
   </body>
 </html>

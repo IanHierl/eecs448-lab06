@@ -14,11 +14,20 @@
   <body>
     <div class="container">
       <div id="app">
-        <label for="numStops">How many stops:</label><br>
-        <input type="number" id="numStops" v-model="numStops" value="10"><br>
-        <ul>
-          <li v-for="stop in filteredStops">{{ stop.name }} :: {{ stop.distance }}</li>
-        </ul>
+        <div style="text-align:center; margin: 2em auto;">
+          <label for="numStops">How many stops:</label>
+          <input type="number" id="numStops" v-model="numStops" value="10">
+        </div>
+        <div class="card">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item"
+                v-for="stop in filteredStops">
+              <h5 class="card-title">{{ stop.name }}</h5>
+              <p class="card-text">{{ stop.description }}</p>
+              <p class="card-text">Distance: {{ stop.distance }} km</p>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
@@ -56,15 +65,24 @@ fetch( 'https://utils.pauliankline.com/stops.json' )
 
 if ( "geolocation" in navigator ) {
   navigator.geolocation.watchPosition( (position) => {
+    // Equation found at: https://www.movable-type.co.uk/scripts/latlong.html
     var lat = position.coords.latitude;
     var lon = position.coords.longitude;
+    var earthR = 6371; // in KM
     for( let i = 0; i < app.stops.length; i++ ) {
-      let dLat = app.stops[i].lat - lat;
-      let dLon = app.stops[i].lon - lon;
-      app.stops[i].distance = Math.sqrt( dLat * dLat + dLon * dLon );
+      let phi1 = lat * Math.PI / 180;
+      let phi2 = app.stops[i].lat * Math.PI / 180;
+      let dLat = (app.stops[i].lat - lat) * Math.PI / 180;
+      let dLon = (app.stops[i].lon - lon) * Math.PI / 180;
+      let a = Math.sin( dLat / 2 ) * Math.sin( dLat / 2 ) +
+              Math.cos( phi1 ) * Math.cos( phi2 ) *
+              Math.sin( dLon / 2 ) * Math.sin( dLon / 2 );
+      let c = 2 * Math.atan2( Math.sqrt( a ), Math.sqrt( 1 - a ) );
+      app.stops[i].distance = Math.round( earthR * c * 10 ) / 10;
     }
   });
 }
+
     </script>
   </body>
 </html>
